@@ -5,6 +5,7 @@ lowprice_bot.py
 다나와 쇼핑 검색을 통해 '베베앙 20개' 최저가 상품을 찾고, 목표가 도달 여부를 알려주는 봇
 """
 
+import os
 import sys
 import re
 import json
@@ -41,18 +42,24 @@ USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTM
 
 
 def load_kakao_env() -> Dict[str, str]:
-    """.env 파일에서 카카오 인증 정보를 안전하게 로드합니다."""
+    """.env 파일 및 시스템 환경변수(GitHub Actions Secrets 등)에서 카카오 인증 정보를 안전하게 로드합니다."""
     env_vars = {}
-    if not ENV_PATH.exists():
-        return env_vars
-    with open(ENV_PATH, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            if "=" in line:
-                k, v = line.split("=", 1)
-                env_vars[k.strip()] = v.strip().strip("'\"")
+    if ENV_PATH.exists():
+        with open(ENV_PATH, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" in line:
+                    k, v = line.split("=", 1)
+                    env_vars[k.strip()] = v.strip().strip("'\"")
+
+    # 시스템 환경변수(GitHub Actions Secrets 등)가 제공된 경우 최우선 적용
+    for key in ["KAKAO_REST_API_KEY", "KAKAO_CLIENT_SECRET", "KAKAO_REFRESH_TOKEN"]:
+        val = os.environ.get(key)
+        if val:
+            env_vars[key] = val.strip()
+
     return env_vars
 
 
